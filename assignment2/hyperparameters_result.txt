@@ -1,0 +1,13 @@
+BEST R_S = 1e-06
+BEST L_R = 0.005
+=> ACC = 0.631
+BEST LRD = 0.96
+=> ACC = 0.637
+BEST B_S = 8
+=> ACC = 0.634
+BEST HLS = 256
+=> ACC = 0.777
+BEST N_E = 100
+=> ACC = 0.789
+***************
+accuracy: 0.771000
