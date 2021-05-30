@@ -1,3 +1,5 @@
+Neural network:
+
 BEST R_S = 1e-06
 BEST L_R = 0.005
 => ACC = 0.631
@@ -9,5 +11,20 @@ BEST HLS = 256
 => ACC = 0.777
 BEST N_E = 100
 => ACC = 0.789
-***************
+
 accuracy: 0.771000
+------------------------
+PyTorch:
+
+learning_rate = 0.0002
+weight_decay = 0.0001
+batch_size = 32
+hidden_in = 200
+hidden_out = 150
+scheduler_step_size = 2
+scheduler_gamma = 0.95
+num_epochs = 100
+optimizer - Adam
+scheduler - StepLR
+
+accuracy: 0.867108
