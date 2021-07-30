@@ -54,7 +54,7 @@ class KNN:
         dists = np.zeros((num_test, num_train), np.float32)
         for i_test in range(num_test):
             for i_train in range(num_train):
-                dists[i_test][i_train] = np.linalg.norm(self.train_X[i_train] - X[i_test], ord=1, axis=0)
+                dists[i_test][i_train] = np.linalg.norm(self.train_X[i_train] - X[i_test], ord=1)
         return dists
 
     def compute_distances_one_loop(self, X):
@@ -90,8 +90,9 @@ class KNN:
         '''
         num_train = self.train_X.shape[0]
         num_test = X.shape[0]
+        # Using float32 to to save memory - the default is float64
         dists = np.zeros((num_test, num_train), np.float32)
-        dists = np.linalg.norm(self.train_X - X[:, np.newaxis, :], ord=1, axis=2)
+        dists = np.linalg.norm(self.train_X[np.newaxis, :, :] - X[:, np.newaxis, :], ord=1, axis=2)
         return dists
 
     def predict_labels_binary(self, dists):
@@ -108,12 +109,10 @@ class KNN:
         '''
         num_test = dists.shape[0]
         pred = np.zeros(num_test, np.bool)
-        for i in range(num_test):
-            k_nearest_indices = np.argpartition(dists[i], self.k)[:self.k]
+        for i_test in range(num_test):
+            k_nearest_indices = np.argsort(dists[i_test])[:self.k]
             k_nearest_labels = self.train_y[k_nearest_indices]
-            # label = True/False
-            true_cnt = np.sum(k_nearest_labels)
-            pred[i] = 2 * true_cnt > self.k
+            pred[i_test] = 2 * np.sum(k_nearest_labels) > self.k
         return pred
 
     def predict_labels_multiclass(self, dists):
@@ -129,10 +128,11 @@ class KNN:
            for every test sample
         '''
         num_test = dists.shape[0]
+        num_test = dists.shape[0]
         pred = np.zeros(num_test, np.int)
-        for i in range(num_test):
-            k_nearest_indices = np.argpartition(dists[i], self.k)[:self.k]
+        for i_test in range(num_test):
+            k_nearest_indices = np.argsort(dists[i_test])[:self.k]
             k_nearest_labels = self.train_y[k_nearest_indices]
-            cnt = [np.sum(k_nearest_labels == j) for j in range(10)]
-            pred[i] = cnt.index(max(cnt))
+            class_cnt = [np.sum(k_nearest_labels == j) for j in range(10)]
+            pred[i_test] = np.argmax(class_cnt)
         return pred

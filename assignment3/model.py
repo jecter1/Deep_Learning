@@ -1,26 +1,42 @@
 import numpy as np
 
-from layers import FullyConnectedLayer, ReLULayer, softmax_with_cross_entropy, l2_regularization
+from layers import (
+    FullyConnectedLayer, ReLULayer,
+    ConvolutionalLayer, MaxPoolingLayer, Flattener,
+    softmax_with_cross_entropy, l2_regularization
+    )
 
 
-class TwoLayerNet:
-    """ Neural network with two fully connected layers """
+class ConvNet:
+    """
+    Implements a very simple conv net
 
-    def __init__(self, n_input, n_output, hidden_layer_size, reg):
+    Input -> Conv[3x3] -> Relu -> Maxpool[4x4] ->
+    Conv[3x3] -> Relu -> MaxPool[4x4] ->
+    Flatten -> FC -> Softmax
+    """
+    def __init__(self, input_shape, n_output_classes, conv1_channels, conv2_channels):
         """
         Initializes the neural network
 
         Arguments:
-        n_input, int - dimension of the model input
-        n_output, int - number of classes to predict
-        hidden_layer_size, int - number of neurons in the hidden layer
-        reg, float - L2 regularization strength
+        input_shape, tuple of 3 ints - image_width, image_height, n_channels
+                                         Will be equal to (32, 32, 3)
+        n_output_classes, int - number of classes to predict
+        conv1_channels, int - number of filters in the 1st conv layer
+        conv2_channels, int - number of filters in the 2nd conv layer
         """
-        self.reg = reg
+        image_channels = input_shape[2]
+        
         self.layers = []
-        self.layers.append(FullyConnectedLayer(n_input, hidden_layer_size))
+        self.layers.append(ConvolutionalLayer(image_channels, conv1_channels, filter_size=3, padding=1))
         self.layers.append(ReLULayer())
-        self.layers.append(FullyConnectedLayer(hidden_layer_size, n_output))
+        self.layers.append(MaxPoolingLayer(pool_size=4, stride=4))
+        self.layers.append(ConvolutionalLayer(conv1_channels, conv2_channels, filter_size=3, padding=1))
+        self.layers.append(ReLULayer())
+        self.layers.append(MaxPoolingLayer(pool_size=4, stride=4))
+        self.layers.append(Flattener())
+        self.layers.append(FullyConnectedLayer(4 * conv2_channels, n_output_classes))
 
     def compute_loss_and_gradients(self, X, y):
         """
@@ -42,11 +58,6 @@ class TwoLayerNet:
         loss, dres = softmax_with_cross_entropy(res, y)
    
         for layer in reversed(self.layers):
-            W = layer.params().get('W')
-            if W is not None:
-                loss_reg, dW_reg = l2_regularization(W.value, self.reg)
-                loss += loss_reg
-                W.grad += dW_reg
             dres = layer.backward(dres)
         
         return loss
@@ -66,7 +77,7 @@ class TwoLayerNet:
         for layer in self.layers:
             res = layer.forward(res)
         
-        y_pred = np.argmax(res, axis=1)
+        y_pred = res.argmax(axis=1)
         return y_pred
 
     def params(self):

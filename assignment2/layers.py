@@ -31,12 +31,11 @@ def softmax(predictions):
         probability for every class, 0..1
     '''
     is_batch = predictions.ndim == 2
-    
-    max_in_row = np.amax(predictions, axis=1)[:, np.newaxis] if is_batch else np.max(predictions)
-    exp_pred = np.exp(predictions - max_in_row)
-    exp_sum = np.sum(exp_pred, axis=1)[:, np.newaxis] if is_batch else np.sum(exp_pred)
-        
-    probs = exp_pred / exp_sum
+    max_pred_in_row = np.max(predictions, axis=1)[:, np.newaxis] if is_batch else np.max(predictions)
+    pred_norm = predictions - max_pred_in_row
+    pred_exp = np.exp(pred_norm)
+    sum_pred_exp = np.sum(pred_exp, axis=1)[:, np.newaxis] if is_batch else np.sum(pred_exp)
+    probs = pred_exp / sum_pred_exp
     return probs
 
 
@@ -54,12 +53,7 @@ def cross_entropy_loss(probs, target_index):
       loss: single value
     '''
     is_batch = probs.ndim == 2
-    
-    if is_batch:
-        i = np.arange(target_index.size)
-        target_probs = probs[i, target_index]
-    else:
-        target_probs = probs[target_index]
+    target_probs = probs[np.arange(target_index.size), target_index] if is_batch else probs[target_index]
     loss = -np.mean(np.log(target_probs))
     return loss
 
@@ -79,19 +73,18 @@ def softmax_with_cross_entropy(predictions, target_index):
       loss, single value - cross-entropy loss
       dprediction, np array same shape as predictions - gradient of predictions by loss value
     """
-    is_batch = predictions.ndim == 2
-    
     probs = softmax(predictions)
     loss = cross_entropy_loss(probs, target_index)
+    
+    is_batch = probs.ndim == 2
     dprediction = probs
+    
     if is_batch:
-        batch_size = target_index.size
-        i = np.arange(batch_size)
-        dprediction[i, target_index] -= 1
-        dprediction /= batch_size
+        dprediction[np.arange(target_index.size), target_index] -= 1
+        dprediction /= target_index.size
     else:
         dprediction[target_index] -= 1
-    
+        
     return loss, dprediction
 
 
@@ -111,10 +104,10 @@ class ReLULayer:
         pass
 
     def forward(self, X):
-        self.negative = X < 0
-        result = np.maximum(0, X)
-        return result
-
+        self.X = X
+        res = np.maximum(0, X)
+        return res
+        
     def backward(self, d_out):
         """
         Backward pass
@@ -128,10 +121,11 @@ class ReLULayer:
           with respect to input
         """
         d_result = d_out.copy()
-        d_result[self.negative] = 0
+        d_result[self.X < 0] = 0
         return d_result
 
     def params(self):
+        # ReLU Doesn't have any parameters
         return {}
 
 
@@ -143,9 +137,9 @@ class FullyConnectedLayer:
 
     def forward(self, X):
         self.X = X
-        result = np.dot(X, self.W.value) + self.B.value
-        return result
-
+        res = np.dot(X, self.W.value) + self.B.value
+        return res
+        
     def backward(self, d_out):
         """
         Backward pass
@@ -160,10 +154,9 @@ class FullyConnectedLayer:
         d_result: np array (batch_size, n_input) - gradient
           with respect to input
         """
+        self.W.grad += np.dot(self.X.T, d_out)
+        self.B.grad += np.sum(d_out, axis=0)
         d_result = np.dot(d_out, self.W.value.T)
-        self.W.grad = np.dot(self.X.T, d_out)
-        self.B.grad = np.sum(d_out, axis=0).reshape(1, -1)
-
         return d_result
 
     def params(self):

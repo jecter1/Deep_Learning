@@ -21,11 +21,11 @@ def binary_classification_metrics(prediction, ground_truth):
     accuracy = (TP + TN) / (TP + TN + FP + FN)
     f1 = 2 * precision * recall / (precision + recall)
     
-    return precision, recall, f1, accuracy
+    return accuracy, precision, recall, f1
 
 
 def multiclass_accuracy(prediction, ground_truth):
-    '''
+    """
     Computes metrics for multiclass classification
 
     Arguments:
@@ -34,7 +34,7 @@ def multiclass_accuracy(prediction, ground_truth):
 
     Returns:
     accuracy - ratio of accurate predictions to total samples
-    '''
+    """
     true_cnt = np.sum(prediction == ground_truth)
     false_cnt = np.sum(prediction != ground_truth)
     

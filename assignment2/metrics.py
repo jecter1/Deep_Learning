@@ -12,8 +12,6 @@ def multiclass_accuracy(prediction, ground_truth):
     accuracy - ratio of accurate predictions to total samples
     """
     true_cnt = np.sum(prediction == ground_truth)
-    full_cnt = prediction.size
+    false_cnt = np.sum(prediction != ground_truth)
     
-    accuracy = true_cnt / full_cnt
-    
-    return accuracy
+    return true_cnt / (true_cnt + false_cnt)
